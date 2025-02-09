@@ -193,13 +193,12 @@
     <p>Room ID: <span id="syncRoomID"></span></p>
     <!-- Video Input Section -->
     <div id="videoInputSection">
-      <!-- Prepopulate with a default video ID -->
       <input type="text" id="videoIdInput" placeholder="Enter YouTube Video ID" value="dQw4w9WgXcQ">
       <button id="loadVideoBtn">Load Video</button>
     </div>
     <!-- Responsive YouTube Player Container -->
     <div id="player" class="hidden"></div>
-    <!-- The "Sync Now" button is only visible for the host (optional for manual override) -->
+    <!-- The "Sync Now" button is only for host manual control (optional) -->
     <button id="syncNowBtn" class="hidden">Sync Now</button>
   </div>
 
@@ -261,7 +260,7 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
       var playerDiv = document.getElementById("player");
       playerDiv.classList.remove("hidden");
       playerDiv.classList.add("animate");
-      // Only show the "Sync Now" button for host if manual control is desired.
+      // Show the Sync Now button only for host (if manual control is desired)
       document.getElementById("syncNowBtn").classList.toggle("hidden", !isHost);
       
       player = new YT.Player('player', {
@@ -281,8 +280,8 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
 
     function onPlayerReady(event) {
       console.log("YouTube Player is ready.");
-      // If host, start continuous sync every second
       if (isHost) {
+        // Start continuous sync every second when the host is playing
         if (player.getPlayerState() === YT.PlayerState.PLAYING) {
           if (syncInterval) clearInterval(syncInterval);
           syncInterval = setInterval(sendSyncCommand, 1000);
@@ -293,12 +292,12 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
     // --- Host Player State Change Handler ---
     function onPlayerStateChange(event) {
       if (!isHost) return; // Only host sends updates
-      // When the host's state changes, update Firebase accordingly.
       // PLAYING = 1, PAUSED = 2, ENDED = 0
       if (event.data === YT.PlayerState.PLAYING) {
         console.log("Host playing");
         if (syncInterval) clearInterval(syncInterval);
         syncInterval = setInterval(sendSyncCommand, 1000);
+        // Update Firebase immediately with "play" state
         db.ref("rooms/" + roomId).set({
           time: player.getCurrentTime(),
           state: "play"
@@ -309,6 +308,7 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
           clearInterval(syncInterval);
           syncInterval = null;
         }
+        // Update Firebase with "pause" state
         db.ref("rooms/" + roomId).set({
           time: player.getCurrentTime(),
           state: "pause"
@@ -325,7 +325,8 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
         if (data && player && !isHost) {
           console.log("Received sync data:", data);
           if (typeof data.time === "number") {
-            if (Math.abs(player.getCurrentTime() - data.time) > 0.5) {
+            // If the joiner's video is off by more than 0.2 seconds, seek to host's time
+            if (Math.abs(player.getCurrentTime() - data.time) > 0.2) {
               player.seekTo(data.time, true);
             }
           }
@@ -440,7 +441,7 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
       }
     });
 
-    // --- Sync Now Button (only for host, if manual sync is needed) ---
+    // --- Sync Now Button (only for host, if manual sync is desired) ---
     document.getElementById("syncNowBtn").addEventListener("click", function() {
       sendSyncCommand();
     });
