@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Responsive Meta Tag -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YouTube Sync - Host or Join</title>
   <style>
     /* Base Styles */
@@ -62,6 +64,23 @@
       animation: fadeIn 0.6s ease-out;
     }
     
+    /* Responsive YouTube Player Container */
+    /* This container ensures the video maintains a 16:9 aspect ratio */
+    #player {
+      position: relative;
+      width: 100%;
+      max-width: 640px; /* maximum width */
+      margin: 0 auto;
+      padding-bottom: 56.25%; /* 16:9 ratio */
+    }
+    #player iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
     /* Bubble Animation Container */
     #bubbles {
       position: fixed;
@@ -73,7 +92,7 @@
       overflow: hidden;
       z-index: 999;
     }
-    /* Bubble Styles (these will be created dynamically) */
+    /* Bubble Styles */
     .bubble {
       position: absolute;
       bottom: 0;
@@ -84,12 +103,11 @@
       opacity: 0;
       /* Default animation: float upward and fade out */
       animation: bubbleFloat 4s linear infinite;
-      /* Start with upward movement (normal direction) */
       animation-direction: normal;
       cursor: pointer;
       pointer-events: auto; /* Allow clicks on bubbles */
     }
-    /* Bubble keyframes: bubbles move upward from bottom (0) to -150px, fading in and out */
+    /* Bubble keyframes */
     @keyframes bubbleFloat {
       0% {
         transform: translateY(0);
@@ -129,9 +147,20 @@
       bottom: 0;
       left: 0;
       padding: 5px 10px;
-      font-size: 17x; /* Increased font size */
+      font-size: 16px; /* Increased font size */
       color: #000;
       z-index: 1001; /* Above the bubbles */
+    }
+    
+    /* Responsive Media Query */
+    @media (max-width: 480px) {
+      input {
+        width: 90%;
+      }
+      button {
+        width: 90%;
+        font-size: 14px;
+      }
     }
   </style>
 </head>
@@ -175,7 +204,7 @@
     <button id="syncNowBtn" class="hidden">Sync Now</button>
   </div>
 
-  <!-- Bubble Container (empty; bubbles will be spawned dynamically) -->
+  <!-- Bubble Container (bubbles are spawned dynamically) -->
   <div id="bubbles"></div>
 
   <!-- Creator Quote -->
@@ -195,7 +224,7 @@
 
     // --- Firebase Initialization ---
     var firebaseConfig = {
-      apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
+  apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
   authDomain: "church-bb0d0.firebaseapp.com",
   databaseURL: "https://church-bb0d0-default-rtdb.firebaseio.com",
   projectId: "church-bb0d0",
@@ -233,9 +262,10 @@
       playerDiv.classList.add("animate");
       document.getElementById("syncNowBtn").classList.remove("hidden");
       
+      // Create a responsive YouTube player by setting width and height to "100%"
       player = new YT.Player('player', {
-        height: '390',
-        width: '640',
+        height: '100%',
+        width: '100%',
         videoId: videoId,
         playerVars: {
           autoplay: 0,
