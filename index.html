@@ -229,7 +229,6 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
   storageBucket: "church-bb0d0.firebasestorage.app",
   messagingSenderId: "290990518536",
   appId: "1:290990518536:web:621741c497c5e4262efcbd",
-  measurementId: "G-1B9R4LLHE9"
     };
     firebase.initializeApp(firebaseConfig);
     var db = firebase.database();
@@ -323,8 +322,8 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
         if (data && player && !isHost) {
           console.log("Received sync data:", data);
           if (typeof data.time === "number") {
-            // If joiner's video is off by more than 0.2 seconds, seek to host's time.
-            if (Math.abs(player.getCurrentTime() - data.time) > 0.2) {
+            // If the joiner's video is off by more than 0.5 seconds, seek to host's time.
+            if (Math.abs(player.getCurrentTime() - data.time) > 0.5) {
               player.seekTo(data.time, true);
             }
           }
