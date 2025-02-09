@@ -292,7 +292,7 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
     // --- Host Player State Change Handler ---
     function onPlayerStateChange(event) {
       if (!isHost) return; // Only host sends updates
-      // YT.PlayerState: PLAYING = 1, PAUSED = 2, ENDED = 0
+      // PLAYING = 1, PAUSED = 2, ENDED = 0
       if (event.data === YT.PlayerState.PLAYING) {
         console.log("Host playing");
         if (syncInterval) clearInterval(syncInterval);
@@ -319,12 +319,12 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
       var roomRef = db.ref("rooms/" + roomId);
       roomRef.on("value", function(snapshot) {
         var data = snapshot.val();
-        // Only update joiner’s player if joiner and player is ready.
+        // Only update joiner's player if joiner (isHost = false) and player is ready.
         if (data && player && !isHost) {
           console.log("Received sync data:", data);
           if (typeof data.time === "number") {
-            // If joiner's video is off by more than 0.05 seconds, seek to host's time.
-            if (Math.abs(player.getCurrentTime() - data.time) > 0.05) {
+            // If joiner's video is off by more than 0.2 seconds, seek to host's time.
+            if (Math.abs(player.getCurrentTime() - data.time) > 0.2) {
               player.seekTo(data.time, true);
             }
           }
