@@ -323,7 +323,7 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
           console.log("Received sync data:", data);
           if (typeof data.time === "number") {
             // If the joiner's video is off by more than 0.5 seconds, seek to host's time.
-            if (Math.abs(player.getCurrentTime() - data.time) > 0.5) {
+            if (Math.abs(player.getCurrentTime() - data.time) > 0.4) {
               player.seekTo(data.time, true);
             }
           }
