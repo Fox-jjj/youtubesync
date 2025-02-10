@@ -148,7 +148,7 @@ socket.on("sync", (data) => {
     console.log("Received sync data:", data);
     if (typeof data.time === "number") {
       const currentTime = player.getCurrentTime();
-      if (Math.abs(currentTime - data.time) > 0.2) { //hereeee
+      if (Math.abs(currentTime - data.time) > 0.1) {  // 0.1-second threshold
         player.seekTo(data.time, true);
       }
     }
@@ -167,8 +167,13 @@ socket.on("newLiveVideo", (data) => {
   }
 });
 
+// When a joiner receives an invalidRoom event, reset the UI
 socket.on("invalidRoom", (data) => {
-  alert(data.message);
+  // Reset joiner UI: show join section and hide sync section
+  document.getElementById("syncSection").classList.add("hidden");
+  document.getElementById("joinSection").classList.remove("hidden");
+  // Display error message in red
+  document.getElementById("joinError").textContent = data.message;
 });
 
 // =======================
@@ -225,7 +230,7 @@ document.getElementById("loadVideoBtn").addEventListener("click", () => {
   }
 });
 
-// Optional: Manual Sync Now Button for Host (force sync)
+// Optional: Manual Sync Now Button for host (force sync)
 document.getElementById("syncNowBtn").addEventListener("click", () => {
   sendSyncCommand(true);
 });
