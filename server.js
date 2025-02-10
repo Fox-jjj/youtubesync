@@ -17,16 +17,16 @@ const rooms = {};
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
-  // Handle joinRoom events from both host and joiners
+  // Handle joinRoom events from host and joiners
   socket.on('joinRoom', (data) => {
     const { roomId, isHost } = data;
     if (isHost) {
-      // Host creates the room.
+      // Register the host for the room.
       rooms[roomId] = socket.id;
       socket.join(roomId);
       console.log(`Host ${socket.id} created and joined room ${roomId}`);
     } else {
-      // For joiners, check if a host exists
+      // For joiners, verify that a host exists
       if (!rooms[roomId]) {
         socket.emit('invalidRoom', { message: 'Invalid room. No host found.' });
         console.log(`Joiner ${socket.id} attempted to join invalid room ${roomId}`);
@@ -37,22 +37,21 @@ io.on('connection', (socket) => {
     }
   });
 
-  // When the host (or client) sends sync data, broadcast it to others in the room.
+  // When a sync event is received from the host, broadcast it to others in the room
   socket.on('sync', (data) => {
     const { roomId, time, state, forceSync } = data;
-    // Broadcast to all others in the room.
     socket.to(roomId).emit('sync', data);
     console.log(`Broadcast sync in room ${roomId}: time=${time}, state=${state}, forceSync=${forceSync}`);
   });
 
-  // When the host sends a new live video event, broadcast it.
+  // When a new live video event is received, broadcast it to joiners
   socket.on('newLiveVideo', (data) => {
     const { roomId, videoId } = data;
     socket.to(roomId).emit('newLiveVideo', data);
     console.log(`Broadcast new live video in room ${roomId}: videoId=${videoId}`);
   });
 
-  // On disconnect, if a host disconnects, remove the room.
+  // On disconnect, if a host disconnects, remove its room
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     for (const room in rooms) {
