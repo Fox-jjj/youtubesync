@@ -10,10 +10,15 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      margin: 20px;
+      margin: 0;
+      padding: 20px;
       background-color: #fff; /* White background */
       color: #000; /* Black text */
       user-select: none; /* Disable text selection */
+      box-sizing: border-box;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
     }
     .hidden {
       display: none;
@@ -64,18 +69,28 @@
       animation: fadeIn 0.6s ease-out;
     }
     
+    /* Sync Section - Flex Layout to Fit the Viewport */
+    #syncSection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-around;
+      height: 100vh; /* Full viewport height */
+      overflow: hidden; /* Prevent scrolling */
+      padding: 20px;
+    }
+    
     /* Responsive YouTube Player Container */
+    /* Instead of using padding-bottom for aspect ratio, we use a fixed max-height */
     #player {
       position: relative;
-      width: 100%;
+      width: 90%;
       max-width: 640px;
+      max-height: 50vh; /* Limit player height to 50% of viewport height */
       margin: 0 auto;
-      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      background: #000;
     }
     #player iframe {
-      position: absolute;
-      top: 0;
-      left: 0;
       width: 100%;
       height: 100%;
     }
@@ -144,7 +159,7 @@
       bottom: 0;
       left: 0;
       padding: 5px 10px;
-      font-size: 16px; /* Increased font size */
+      font-size: 16px;
       color: #000;
       z-index: 1001;
     }
@@ -280,7 +295,7 @@
     function onPlayerReady(event) {
       console.log("YouTube Player is ready.");
       if (isHost) {
-        // Start continuous sync every 200ms when the host is playing
+        // Start continuous sync every 200ms for tighter synchronization.
         if (player.getPlayerState() === YT.PlayerState.PLAYING) {
           if (syncInterval) clearInterval(syncInterval);
           syncInterval = setInterval(sendSyncCommand, 200);
@@ -324,20 +339,9 @@
           if (typeof data.time === "number") {
             var currentTime = player.getCurrentTime();
             var diff = data.time - currentTime;
-            // If the difference is greater than 0.5 seconds, adjust:
+            // If the difference is greater than 0.5 seconds, seek to host's time.
             if (Math.abs(diff) > 0.5) {
-              // If joiner is behind, seek to host's time immediately
-              if (diff > 0) {
-                player.seekTo(data.time, true);
-              } else {
-                // If joiner is ahead, seek back to host's time
-                player.seekTo(data.time, true);
-              }
-              // Reset playback rate to normal
-              player.setPlaybackRate(1.0);
-            } else {
-              // If within threshold, ensure normal playback rate
-              player.setPlaybackRate(1.0);
+              player.seekTo(data.time, true);
             }
           }
           if (data.state === "play") {
