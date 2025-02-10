@@ -21,7 +21,7 @@ function isPrivateIP(ip) {
          })(ip.split('.')));
 }
 
-// If the client is a joiner and the host's IP does not look private, warn the user.
+// If this client is a joiner and the detected host IP is not private, alert the user.
 if (!isHost && !isPrivateIP(hostIP)) {
   alert("It appears you are not connected to the host's hotspot. Please connect to the host's hotspot and reload the page.");
 }
@@ -46,7 +46,7 @@ function createPlayer(videoId) {
   const playerDiv = document.getElementById("player");
   playerDiv.classList.remove("hidden");
   playerDiv.classList.add("animate");
-  // Show the Sync Now button only for the host (if manual control is desired)
+  // Show the Sync Now button only for host (if manual control is desired)
   document.getElementById("syncNowBtn").classList.toggle("hidden", !isHost);
 
   player = new YT.Player('player', {
@@ -69,14 +69,6 @@ function onPlayerReady(event) {
   console.log("YouTube Player is ready.");
   if (isHost) {
     socket.emit("joinRoom", { roomId, isHost: true });
-    // Generate a QR code for joiners using the host's URL
-    const qrDiv = document.getElementById("qrCode");
-    qrDiv.innerHTML = ""; // Clear any previous QR code
-    new QRCode(qrDiv, {
-      text: window.location.href,
-      width: 150,
-      height: 150
-    });
     // If the host is already playing, start sending sync updates every 200ms
     if (player.getPlayerState() === YT.PlayerState.PLAYING) {
       if (syncInterval) clearInterval(syncInterval);
@@ -89,7 +81,7 @@ function onPlayerReady(event) {
 
 // Host Player State Change Handler
 function onPlayerStateChange(event) {
-  if (!isHost) return;
+  if (!isHost) return; // Only host sends sync updates
   // YT.PlayerState: PLAYING = 1, PAUSED = 2, ENDED = 0
   if (event.data === YT.PlayerState.PLAYING) {
     console.log("Host playing");
@@ -98,7 +90,8 @@ function onPlayerStateChange(event) {
     socket.emit("sync", {
       roomId,
       time: player.getCurrentTime(),
-      state: "play"
+      state: "play",
+      forceSync: false
     });
   } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
     console.log("Host paused or ended");
@@ -109,21 +102,23 @@ function onPlayerStateChange(event) {
     socket.emit("sync", {
       roomId,
       time: player.getCurrentTime(),
-      state: "pause"
+      state: "pause",
+      forceSync: false
     });
   }
 }
 
-// Host sends sync commands periodically
-function sendSyncCommand() {
+// Host sends sync commands periodically; accepts an optional 'force' parameter
+function sendSyncCommand(force = false) {
   if (player && isHost) {
     const currentTime = player.getCurrentTime();
     socket.emit("sync", {
       roomId,
       time: currentTime,
-      state: "play"
+      state: "play",
+      forceSync: force
     });
-    console.log("Sync command sent:", currentTime);
+    console.log("Sync command sent:", currentTime, force ? "[Force Sync]" : "");
   }
 }
 
@@ -133,8 +128,8 @@ socket.on("sync", (data) => {
     console.log("Received sync data:", data);
     if (typeof data.time === "number") {
       const currentTime = player.getCurrentTime();
-      // If the joiner's video is off by more than 0.5 seconds, seek to the host's time
-      if (Math.abs(currentTime - data.time) > 0.5) {
+      // If forceSync is true or the difference is greater than 0.5 seconds, seek to the host's time
+      if (data.forceSync || Math.abs(currentTime - data.time) > 0.5) {
         player.seekTo(data.time, true);
       }
     }
@@ -149,7 +144,6 @@ socket.on("sync", (data) => {
 // Listen for invalid room events (if joiner attempts to join a room with no host)
 socket.on("invalidRoom", (data) => {
   alert(data.message);
-  // Optionally, you can reset the join room UI here.
 });
 
 // UI Event Handlers
@@ -161,7 +155,7 @@ document.getElementById("hostBtn").addEventListener("click", () => {
   document.getElementById("hostRoomID").textContent = roomId;
   document.getElementById("modeSelection").classList.add("hidden");
   document.getElementById("hostSection").classList.remove("hidden");
-  // Emit joinRoom immediately so the room is created on the server
+  // Immediately register the room on the server
   socket.emit("joinRoom", { roomId, isHost: true });
 });
 
@@ -205,9 +199,9 @@ document.getElementById("loadVideoBtn").addEventListener("click", () => {
   }
 });
 
-// Optional: Manual Sync Now Button for host
+// Optional: Manual Sync Now Button for host (force sync)
 document.getElementById("syncNowBtn").addEventListener("click", () => {
-  sendSyncCommand();
+  sendSyncCommand(true); // Force a sync update
 });
 
 // Dynamic Bubble Spawning (for visual effect)
