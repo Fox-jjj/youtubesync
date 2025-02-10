@@ -1,7 +1,7 @@
 {
   "name": "youtube-sync-app",
   "version": "1.0.0",
-  "description": "A YouTube sync app using Socket.io and the YouTube IFrame API",
+  "description": "A YouTube synchronization app using Socket.io and the YouTube IFrame API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
