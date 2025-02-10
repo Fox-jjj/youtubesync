@@ -5,26 +5,23 @@ let isHost = false;
 let roomId = "";
 let player;
 let syncInterval; // For host continuous sync
-const socket = io(); // Connect to our Socket.io server
+const socket = io(); // Connect to the Socket.io server
 
-// For a hotspot-based connection, use the host's IP from the URL.
-// When joiners load the page from the host's hotspot, window.location.hostname will be the host's local IP.
-const hostIP = window.location.hostname; 
-// (If you need to force a connection URL, you could use: 
-// const socket = io("http://" + hostIP + (window.location.port ? ":" + window.location.port : ""));
-// But if you serve the page from your Node.js server, io() will work automatically.)
+// For a hotspot connection, we assume joiners load the page from the host's local IP.
+// The host's IP is available via window.location.hostname.
+const hostIP = window.location.hostname;
 
-// Helper: Check if an IP address is in a private range (e.g., 192.168.x.x, 10.x.x.x, or 172.16.x.x–172.31.x.x)
+// Helper: Check if an IP address is in a private range (common for hotspots)
 function isPrivateIP(ip) {
   return ip.startsWith("192.168.") ||
          ip.startsWith("10.") ||
-         (ip.startsWith("172.") && (function(parts){
+         (ip.startsWith("172.") && (function(parts) {
              const secondOctet = parseInt(parts[1], 10);
              return secondOctet >= 16 && secondOctet <= 31;
          })(ip.split('.')));
 }
 
-// If this client is a joiner and the detected host IP is not private, alert the user.
+// If the client is a joiner and the host's IP does not look private, warn the user.
 if (!isHost && !isPrivateIP(hostIP)) {
   alert("It appears you are not connected to the host's hotspot. Please connect to the host's hotspot and reload the page.");
 }
@@ -71,22 +68,28 @@ function createPlayer(videoId) {
 function onPlayerReady(event) {
   console.log("YouTube Player is ready.");
   if (isHost) {
-    // Notify the server that the host has joined the room
     socket.emit("joinRoom", { roomId, isHost: true });
-    // If already playing, start sending sync updates every 200ms
+    // Generate a QR code for joiners using the host's URL
+    const qrDiv = document.getElementById("qrCode");
+    qrDiv.innerHTML = ""; // Clear any previous QR code
+    new QRCode(qrDiv, {
+      text: window.location.href,
+      width: 150,
+      height: 150
+    });
+    // If the host is already playing, start sending sync updates every 200ms
     if (player.getPlayerState() === YT.PlayerState.PLAYING) {
       if (syncInterval) clearInterval(syncInterval);
       syncInterval = setInterval(sendSyncCommand, 200);
     }
   } else {
-    // Notify the server that a joiner has joined the room
     socket.emit("joinRoom", { roomId, isHost: false });
   }
 }
 
 // Host Player State Change Handler
 function onPlayerStateChange(event) {
-  if (!isHost) return; // Only host sends sync updates
+  if (!isHost) return;
   // YT.PlayerState: PLAYING = 1, PAUSED = 2, ENDED = 0
   if (event.data === YT.PlayerState.PLAYING) {
     console.log("Host playing");
@@ -130,7 +133,7 @@ socket.on("sync", (data) => {
     console.log("Received sync data:", data);
     if (typeof data.time === "number") {
       const currentTime = player.getCurrentTime();
-      // If joiner's video is off by more than 0.5 seconds, seek to the host's time.
+      // If the joiner's video is off by more than 0.5 seconds, seek to the host's time
       if (Math.abs(currentTime - data.time) > 0.5) {
         player.seekTo(data.time, true);
       }
@@ -146,7 +149,7 @@ socket.on("sync", (data) => {
 // Listen for invalid room events (if joiner attempts to join a room with no host)
 socket.on("invalidRoom", (data) => {
   alert(data.message);
-  // Optionally reset the join room input or UI here
+  // Optionally, you can reset the join room UI here.
 });
 
 // UI Event Handlers
@@ -158,6 +161,8 @@ document.getElementById("hostBtn").addEventListener("click", () => {
   document.getElementById("hostRoomID").textContent = roomId;
   document.getElementById("modeSelection").classList.add("hidden");
   document.getElementById("hostSection").classList.remove("hidden");
+  // Emit joinRoom immediately so the room is created on the server
+  socket.emit("joinRoom", { roomId, isHost: true });
 });
 
 // Mode Selection: Join
@@ -175,6 +180,7 @@ document.getElementById("joinRoomBtn").addEventListener("click", () => {
     return;
   }
   roomId = inputRoom;
+  socket.emit("joinRoom", { roomId, isHost: false });
   document.getElementById("joinSection").classList.add("hidden");
   document.getElementById("syncRoomID").textContent = roomId;
   document.getElementById("syncSection").classList.remove("hidden");
