@@ -4,8 +4,26 @@
 let isHost = false;
 let roomId = "";
 let player;
-let syncInterval; // For continuous sync (host only)
-const socket = io(); // Connect to Socket.io server
+let syncInterval; // For host continuous sync
+// When running on the host's hotspot, window.location.hostname should be the host's local IP.
+const hostIP = window.location.hostname; 
+// Create our Socket.io connection explicitly using the host's IP and port.
+const socket = io("http://" + hostIP + (window.location.port ? ":" + window.location.port : ""));
+
+// Helper: Check if an IP address is private (common private ranges: 10.x.x.x, 192.168.x.x, 172.16.x.x - 172.31.x.x)
+function isPrivateIP(ip) {
+  return ip.startsWith("192.168.") ||
+         ip.startsWith("10.") ||
+         (ip.startsWith("172.") && (function(parts){ 
+             const secondOctet = parseInt(parts[1], 10); 
+             return secondOctet >= 16 && secondOctet <= 31;
+         })(ip.split('.')));
+}
+
+// If this client is a joiner, check that the page was loaded from a private IP
+if (!isHost && !isPrivateIP(hostIP)) {
+  alert("It appears you are not connected to the host's hotspot. Please connect to the host's hotspot and reload the page.");
+}
 
 // Utility: Generate a random 4-character Room ID
 function generateShortRoomID() {
@@ -27,7 +45,7 @@ function createPlayer(videoId) {
   const playerDiv = document.getElementById("player");
   playerDiv.classList.remove("hidden");
   playerDiv.classList.add("animate");
-  // Show the Sync Now button only for host (if manual control is desired)
+  // Show the Sync Now button only for host (optional manual control)
   document.getElementById("syncNowBtn").classList.toggle("hidden", !isHost);
 
   player = new YT.Player('player', {
@@ -49,15 +67,13 @@ function createPlayer(videoId) {
 function onPlayerReady(event) {
   console.log("YouTube Player is ready.");
   if (isHost) {
-    // Notify the server that the host has joined the room
     socket.emit("joinRoom", { roomId, isHost: true });
-    // If already playing, start sending sync updates every 200ms
+    // If the host is already playing, start sending sync updates every 200ms
     if (player.getPlayerState() === YT.PlayerState.PLAYING) {
       if (syncInterval) clearInterval(syncInterval);
       syncInterval = setInterval(sendSyncCommand, 200);
     }
   } else {
-    // Notify the server that a joiner has joined the room
     socket.emit("joinRoom", { roomId, isHost: false });
   }
 }
@@ -108,6 +124,7 @@ socket.on("sync", (data) => {
     console.log("Received sync data:", data);
     if (typeof data.time === "number") {
       const currentTime = player.getCurrentTime();
+      // If the difference is greater than 0.5 seconds, adjust the joiner's playback
       if (Math.abs(currentTime - data.time) > 0.5) {
         player.seekTo(data.time, true);
       }
@@ -120,10 +137,10 @@ socket.on("sync", (data) => {
   }
 });
 
-// Listen for invalid room events (if joiner tries to join a non-existent room)
+// Listen for invalid room events (if joiner attempts to join a room with no host)
 socket.on("invalidRoom", (data) => {
   alert(data.message);
-  // Optionally reset UI for joiner to try again
+  // Optionally, reset the join UI here
 });
 
 // UI Event Handlers
