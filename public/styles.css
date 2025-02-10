@@ -147,7 +147,7 @@ input:focus {
   z-index: 1001;
 }
 
-/* QR Code container style (host only) */
+/* QR Code container (host only) */
 #qrCode {
   margin: 20px auto;
   width: 150px;
