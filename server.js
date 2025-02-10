@@ -17,18 +17,17 @@ const rooms = {};
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
-  // Listen for joinRoom events from both host and joiners
+  // Listen for joinRoom events
   socket.on('joinRoom', (data) => {
     const { roomId, isHost } = data;
     if (isHost) {
-      // If the client is the host, register the room.
+      // Register host in the room
       rooms[roomId] = socket.id;
       socket.join(roomId);
       console.log(`Host ${socket.id} created and joined room ${roomId}`);
     } else {
-      // If a joiner, check if the room exists (i.e. if a host is registered)
+      // Check if room exists (host is present)
       if (!rooms[roomId]) {
-        // Notify the joiner that the room is invalid
         socket.emit('invalidRoom', { message: 'Invalid room. No host found.' });
         console.log(`Joiner ${socket.id} attempted to join invalid room ${roomId}`);
       } else {
@@ -38,14 +37,14 @@ io.on('connection', (socket) => {
     }
   });
 
-  // When a sync event is received from the host, broadcast it to others in the room
+  // When a sync event is received from a host, broadcast it to others in the room
   socket.on('sync', (data) => {
     const { roomId, time, state } = data;
     socket.to(roomId).emit('sync', data);
     console.log(`Broadcast sync in room ${roomId}: time=${time}, state=${state}`);
   });
 
-  // When a client disconnects, remove its room if it was the host
+  // On disconnect, if the host disconnects, remove its room
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     for (const room in rooms) {
