@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YouTube Sync - Host or Join</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- Include QRCode.js library from a CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
   <h1>YouTube Sync</h1>
@@ -21,6 +23,8 @@
   <div id="hostSection" class="hidden">
     <h2>Host Room</h2>
     <p>Your generated Room ID: <span id="hostRoomID"></span></p>
+    <!-- QR Code Container for auto-detection (for joiners to scan) -->
+    <div id="qrCode"></div>
     <button id="startSyncHost">Start Sync</button>
   </div>
 
@@ -44,7 +48,7 @@
     </div>
     <!-- Responsive YouTube Player Container -->
     <div id="player" class="hidden"></div>
-    <!-- Optional manual Sync Now button (for host) -->
+    <!-- Optional: Manual Sync Now Button for host -->
     <button id="syncNowBtn" class="hidden">Sync Now</button>
   </div>
 
@@ -54,7 +58,7 @@
   <!-- Creator Quote -->
   <div id="creatorQuote">Created by Fortune Adiat</div>
 
-  <!-- Socket.io Client Library (served from the Node.js server) -->
+  <!-- Socket.io Client Library (served from our Node.js server) -->
   <script src="/socket.io/socket.io.js"></script>
   <!-- YouTube IFrame API -->
   <script src="https://www.youtube.com/iframe_api"></script>
