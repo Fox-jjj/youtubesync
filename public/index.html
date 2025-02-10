@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Responsive Meta Tag -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Sync - Host or Join</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>YouTube Sync</h1>
+
+  <!-- Mode Selection -->
+  <div id="modeSelection">
+    <p>How would you like to connect?</p>
+    <button id="hostBtn">Host a Room</button>
+    <button id="joinBtn">Join a Room</button>
+  </div>
+
+  <!-- Host Section -->
+  <div id="hostSection" class="hidden">
+    <h2>Host Room</h2>
+    <p>Your generated Room ID: <span id="hostRoomID"></span></p>
+    <button id="startSyncHost">Start Sync</button>
+  </div>
+
+  <!-- Join Section -->
+  <div id="joinSection" class="hidden">
+    <h2>Join Room</h2>
+    <input type="text" id="joinRoomInput" placeholder="Enter Room ID">
+    <br>
+    <button id="joinRoomBtn">Join Room</button>
+    <p id="joinError" style="color: #ff4d4d;"></p>
+  </div>
+
+  <!-- Sync Section (common for host & join) -->
+  <div id="syncSection" class="hidden">
+    <h2>Sync Page</h2>
+    <p>Room ID: <span id="syncRoomID"></span></p>
+    <!-- Video Input Section -->
+    <div id="videoInputSection">
+      <input type="text" id="videoIdInput" placeholder="Enter YouTube Video ID" value="dQw4w9WgXcQ">
+      <button id="loadVideoBtn">Load Video</button>
+    </div>
+    <!-- Responsive YouTube Player Container -->
+    <div id="player" class="hidden"></div>
+    <!-- Optional manual Sync Now Button (host only) -->
+    <button id="syncNowBtn" class="hidden">Sync Now</button>
+  </div>
+
+  <!-- Bubble Container (for visual effect) -->
+  <div id="bubbles"></div>
+
+  <!-- Creator Quote -->
+  <div id="creatorQuote">Created by Fortune Adiat</div>
+
+  <!-- Socket.io Client Library (served from the Node.js server) -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <!-- Client-Side JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
