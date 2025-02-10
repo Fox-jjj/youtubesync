@@ -5,6 +5,7 @@
 // =======================
 const YOUTUBE_API_KEY = 'AIzaSyB1YQ_mzFg-kBwJXVy_JFji5_KHYbIt9FE';
 const CHANNEL_ID = 'UCtZnpXyUowew9eg1rbkoL7A';
+
 // =======================
 // GLOBAL VARIABLES
 // =======================
@@ -13,10 +14,6 @@ let roomId = "";
 let player;
 let syncInterval; // For host continuous sync
 const socket = io(); // Connect to the Socket.io server
-
-// For hotspot connections, we assume joiners load the page from the host's local IP.
-// The host's IP is available via window.location.hostname.
-const hostIP = window.location.hostname;
 
 // =======================
 // HELPER FUNCTIONS
@@ -44,14 +41,14 @@ function generateShortRoomID() {
   return result;
 }
 
-// Function to fetch a new live video ID via the YouTube Data API
+// Function to fetch a new live video ID using the YouTube Data API
 async function fetchNewLiveVideo() {
   const apiURL = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&eventType=live&type=video&key=${YOUTUBE_API_KEY}`;
   try {
     const response = await fetch(apiURL);
     const data = await response.json();
     if (data.items && data.items.length > 0) {
-      return data.items[0].id.videoId; // Return first live video ID found
+      return data.items[0].id.videoId;
     } else {
       console.log("No live broadcast found.");
       return null;
@@ -151,7 +148,7 @@ socket.on("sync", (data) => {
     console.log("Received sync data:", data);
     if (typeof data.time === "number") {
       const currentTime = player.getCurrentTime();
-      if (Math.abs(currentTime - data.time) > 0.1) { // 0.1-second threshold
+      if (Math.abs(currentTime - data.time) > 0.1) {
         player.seekTo(data.time, true);
       }
     }
@@ -203,12 +200,6 @@ document.getElementById("joinRoomBtn").addEventListener("click", () => {
     return;
   }
   roomId = inputRoom;
-  if (!isPrivateIP(hostIP)) {
-    alert("You are not connected to the host's hotspot. Please connect and try again.");
-    return;
-  } else {
-    alert("WiFi connection established successfully. Loading video...");
-  }
   socket.emit("joinRoom", { roomId, isHost: false });
   document.getElementById("joinSection").classList.add("hidden");
   document.getElementById("syncRoomID").textContent = roomId;
