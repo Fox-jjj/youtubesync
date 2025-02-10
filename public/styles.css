@@ -147,6 +147,13 @@ input:focus {
   z-index: 1001;
 }
 
+/* Styles for the QR Code container (host only) */
+#qrCode {
+  margin: 20px auto;
+  width: 150px;
+  height: 150px;
+}
+
 /* Responsive Media Query */
 @media (max-width: 480px) {
   input {
