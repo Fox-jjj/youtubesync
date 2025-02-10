@@ -5,7 +5,7 @@ let isHost = false;
 let roomId = "";
 let player;
 let syncInterval; // For continuous sync (host only)
-const socket = io(); // Connect to our Socket.io server
+const socket = io(); // Connect to Socket.io server
 
 // Utility: Generate a random 4-character Room ID
 function generateShortRoomID() {
@@ -27,7 +27,7 @@ function createPlayer(videoId) {
   const playerDiv = document.getElementById("player");
   playerDiv.classList.remove("hidden");
   playerDiv.classList.add("animate");
-  // Show the Sync Now button only for the host (if manual control is desired)
+  // Show the Sync Now button only for host (if manual control is desired)
   document.getElementById("syncNowBtn").classList.toggle("hidden", !isHost);
 
   player = new YT.Player('player', {
@@ -49,20 +49,22 @@ function createPlayer(videoId) {
 function onPlayerReady(event) {
   console.log("YouTube Player is ready.");
   if (isHost) {
+    // Notify the server that the host has joined the room
     socket.emit("joinRoom", { roomId, isHost: true });
-    // If already playing, start sync updates every 200ms
+    // If already playing, start sending sync updates every 200ms
     if (player.getPlayerState() === YT.PlayerState.PLAYING) {
       if (syncInterval) clearInterval(syncInterval);
       syncInterval = setInterval(sendSyncCommand, 200);
     }
   } else {
+    // Notify the server that a joiner has joined the room
     socket.emit("joinRoom", { roomId, isHost: false });
   }
 }
 
 // Host Player State Change Handler
 function onPlayerStateChange(event) {
-  if (!isHost) return; // Only host sends sync updates
+  if (!isHost) return; // Only host sends updates
   // YT.PlayerState: PLAYING = 1, PAUSED = 2, ENDED = 0
   if (event.data === YT.PlayerState.PLAYING) {
     console.log("Host playing");
@@ -116,6 +118,12 @@ socket.on("sync", (data) => {
       player.pauseVideo();
     }
   }
+});
+
+// Listen for invalid room events (if joiner tries to join a non-existent room)
+socket.on("invalidRoom", (data) => {
+  alert(data.message);
+  // Optionally reset UI for joiner to try again
 });
 
 // UI Event Handlers
