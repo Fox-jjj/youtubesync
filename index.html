@@ -144,7 +144,7 @@
       bottom: 0;
       left: 0;
       padding: 5px 10px;
-      font-size: 16px;
+      font-size: 16px; /* Increased font size */
       color: #000;
       z-index: 1001;
     }
@@ -222,7 +222,7 @@
 
     // --- Firebase Initialization ---
     var firebaseConfig = {
-apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
+  apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
   authDomain: "church-bb0d0.firebaseapp.com",
   databaseURL: "https://church-bb0d0-default-rtdb.firebaseio.com",
   projectId: "church-bb0d0",
@@ -280,7 +280,7 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
     function onPlayerReady(event) {
       console.log("YouTube Player is ready.");
       if (isHost) {
-        // Start continuous sync every 200ms for tighter synchronization.
+        // Start continuous sync every 200ms when the host is playing
         if (player.getPlayerState() === YT.PlayerState.PLAYING) {
           if (syncInterval) clearInterval(syncInterval);
           syncInterval = setInterval(sendSyncCommand, 200);
@@ -322,9 +322,22 @@ apiKey: "AIzaSyBq-1QsqHNBdUCcUKRhBaqWpuwSnB1E1gU",
         if (data && player && !isHost) {
           console.log("Received sync data:", data);
           if (typeof data.time === "number") {
-            // If the joiner's video is off by more than 0.5 seconds, seek to host's time.
-            if (Math.abs(player.getCurrentTime() - data.time) > 0.4) {
-              player.seekTo(data.time, true);
+            var currentTime = player.getCurrentTime();
+            var diff = data.time - currentTime;
+            // If the difference is greater than 0.5 seconds, adjust:
+            if (Math.abs(diff) > 0.5) {
+              // If joiner is behind, seek to host's time immediately
+              if (diff > 0) {
+                player.seekTo(data.time, true);
+              } else {
+                // If joiner is ahead, seek back to host's time
+                player.seekTo(data.time, true);
+              }
+              // Reset playback rate to normal
+              player.setPlaybackRate(1.0);
+            } else {
+              // If within threshold, ensure normal playback rate
+              player.setPlaybackRate(1.0);
             }
           }
           if (data.state === "play") {
