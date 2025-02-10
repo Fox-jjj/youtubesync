@@ -21,7 +21,7 @@ io.on('connection', (socket) => {
   socket.on('joinRoom', (data) => {
     const { roomId, isHost } = data;
     if (isHost) {
-      // Register the host for the room.
+      // Host creates the room.
       rooms[roomId] = socket.id;
       socket.join(roomId);
       console.log(`Host ${socket.id} created and joined room ${roomId}`);
@@ -51,7 +51,7 @@ io.on('connection', (socket) => {
     console.log(`Broadcast new live video in room ${roomId}: videoId=${videoId}`);
   });
 
-  // On disconnect, if a host disconnects, remove its room
+  // Clean up: if a host disconnects, remove its room.
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     for (const room in rooms) {
