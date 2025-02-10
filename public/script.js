@@ -5,22 +5,26 @@ let isHost = false;
 let roomId = "";
 let player;
 let syncInterval; // For host continuous sync
-// When running on the host's hotspot, window.location.hostname should be the host's local IP.
-const hostIP = window.location.hostname; 
-// Create our Socket.io connection explicitly using the host's IP and port.
-const socket = io("http://" + hostIP + (window.location.port ? ":" + window.location.port : ""));
+const socket = io(); // Connect to our Socket.io server
 
-// Helper: Check if an IP address is private (common private ranges: 10.x.x.x, 192.168.x.x, 172.16.x.x - 172.31.x.x)
+// For a hotspot-based connection, use the host's IP from the URL.
+// When joiners load the page from the host's hotspot, window.location.hostname will be the host's local IP.
+const hostIP = window.location.hostname; 
+// (If you need to force a connection URL, you could use: 
+// const socket = io("http://" + hostIP + (window.location.port ? ":" + window.location.port : ""));
+// But if you serve the page from your Node.js server, io() will work automatically.)
+
+// Helper: Check if an IP address is in a private range (e.g., 192.168.x.x, 10.x.x.x, or 172.16.x.x–172.31.x.x)
 function isPrivateIP(ip) {
   return ip.startsWith("192.168.") ||
          ip.startsWith("10.") ||
-         (ip.startsWith("172.") && (function(parts){ 
-             const secondOctet = parseInt(parts[1], 10); 
+         (ip.startsWith("172.") && (function(parts){
+             const secondOctet = parseInt(parts[1], 10);
              return secondOctet >= 16 && secondOctet <= 31;
          })(ip.split('.')));
 }
 
-// If this client is a joiner, check that the page was loaded from a private IP
+// If this client is a joiner and the detected host IP is not private, alert the user.
 if (!isHost && !isPrivateIP(hostIP)) {
   alert("It appears you are not connected to the host's hotspot. Please connect to the host's hotspot and reload the page.");
 }
@@ -45,7 +49,7 @@ function createPlayer(videoId) {
   const playerDiv = document.getElementById("player");
   playerDiv.classList.remove("hidden");
   playerDiv.classList.add("animate");
-  // Show the Sync Now button only for host (optional manual control)
+  // Show the Sync Now button only for the host (if manual control is desired)
   document.getElementById("syncNowBtn").classList.toggle("hidden", !isHost);
 
   player = new YT.Player('player', {
@@ -67,20 +71,22 @@ function createPlayer(videoId) {
 function onPlayerReady(event) {
   console.log("YouTube Player is ready.");
   if (isHost) {
+    // Notify the server that the host has joined the room
     socket.emit("joinRoom", { roomId, isHost: true });
-    // If the host is already playing, start sending sync updates every 200ms
+    // If already playing, start sending sync updates every 200ms
     if (player.getPlayerState() === YT.PlayerState.PLAYING) {
       if (syncInterval) clearInterval(syncInterval);
       syncInterval = setInterval(sendSyncCommand, 200);
     }
   } else {
+    // Notify the server that a joiner has joined the room
     socket.emit("joinRoom", { roomId, isHost: false });
   }
 }
 
 // Host Player State Change Handler
 function onPlayerStateChange(event) {
-  if (!isHost) return; // Only host sends updates
+  if (!isHost) return; // Only host sends sync updates
   // YT.PlayerState: PLAYING = 1, PAUSED = 2, ENDED = 0
   if (event.data === YT.PlayerState.PLAYING) {
     console.log("Host playing");
@@ -124,7 +130,7 @@ socket.on("sync", (data) => {
     console.log("Received sync data:", data);
     if (typeof data.time === "number") {
       const currentTime = player.getCurrentTime();
-      // If the difference is greater than 0.5 seconds, adjust the joiner's playback
+      // If joiner's video is off by more than 0.5 seconds, seek to the host's time.
       if (Math.abs(currentTime - data.time) > 0.5) {
         player.seekTo(data.time, true);
       }
@@ -140,7 +146,7 @@ socket.on("sync", (data) => {
 // Listen for invalid room events (if joiner attempts to join a room with no host)
 socket.on("invalidRoom", (data) => {
   alert(data.message);
-  // Optionally, reset the join UI here
+  // Optionally reset the join room input or UI here
 });
 
 // UI Event Handlers
