@@ -139,9 +139,9 @@ function sendSyncCommand(force = false) {
   }
 }
 
-// =======================
+// ==============
 // SOCKET EVENT HANDLERS
-// =======================
+// ==================
 
 socket.on("sync", (data) => {
   if (!isHost && player && data.roomId === roomId) {
@@ -178,7 +178,7 @@ socket.on("invalidRoom", (data) => {
 
 // =======================
 // UI EVENT HANDLERS
-// =======================
+// =====================
 
 // Host Mode Selection
 document.getElementById("hostBtn").addEventListener("click", () => {
@@ -235,9 +235,9 @@ document.getElementById("syncNowBtn").addEventListener("click", () => {
   sendSyncCommand(true);
 });
 
-// =======================
+// ============================
 // DYNAMIC BUBBLE SPAWNING (VISUAL EFFECT)
-// =======================
+// ============================
 function spawnBubble() {
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
