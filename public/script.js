@@ -1,8 +1,7 @@
 // script.js
 
-// =======================
 // CONFIGURATION CONSTANTS
-// =======================
+
 const YOUTUBE_API_KEY = 'AIzaSyB1YQ_mzFg-kBwJXVy_JFji5_KHYbIt9FE';
 const CHANNEL_ID = 'UCtZnpXyUowew9eg1rbkoL7A';
 
