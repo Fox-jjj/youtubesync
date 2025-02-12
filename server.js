@@ -11,13 +11,13 @@ const io = socketIo(server);
 // Serve static files from the "public" folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Global object to track active rooms (roomId: hostSocketId)
+// (roomId: hostSocketId)
 const rooms = {};
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
-  // Handle joinRoom events from host and joiners
+  // Handling joinRoom events from host and joiners
   socket.on('joinRoom', (data) => {
     const { roomId, isHost } = data;
     if (isHost) {
