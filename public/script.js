@@ -184,7 +184,7 @@ function spawnBubble() {
   const duration = 3 + Math.random() * 2;
   bubble.style.animationDuration = duration + 's';
   document.getElementById('bubbles').appendChild(bubble);
-  setTimeout(() => {
+  setTimeout(function () {
     if (bubble.parentNode) {
       bubble.remove();
     }
@@ -193,7 +193,7 @@ function spawnBubble() {
     e.stopPropagation();
     if (!bubble.classList.contains('pop')) {
       bubble.classList.add('pop');
-      setTimeout(() => {
+      setTimeout(function () {
         bubble.remove();
       }, 500);
     }
