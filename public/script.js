@@ -147,7 +147,7 @@ socket.on("sync", (data) => {
     console.log("Received sync data:", data);
     if (typeof data.time === "number") {
       const currentTime = player.getCurrentTime();
-      if (Math.abs(currentTime - data.time) > 0.1) {  // 0.1-second threshold
+      if (Math.abs(currentTime - data.time) > 0.9) {  // 0.1-second threshold
         player.seekTo(data.time, true);
       }
     }
